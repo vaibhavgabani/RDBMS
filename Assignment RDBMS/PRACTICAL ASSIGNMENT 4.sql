@@ -188,3 +188,105 @@ END;
 
 
 
+----------------------------------------------------
+-- 6. Package : Create Specification 
+----------------------------------------------------
+
+CREATE OR REPLACE PACKAGE DATADATA AS
+
+    -- Procedure to find and display the most expensive book(s)
+    PROCEDURE MOSTEXPENSIVEBOOK;
+
+    -- Procedure to count total books for a given subject
+    PROCEDURE TOTBOOKBYSUBJECT (
+        p_subject_name IN BOOKSUBJECT.BOOKSUBJECT_NAME%TYPE
+    );
+
+    -- Procedure to list all books by a specific author
+    PROCEDURE BOOKSBYAUTHOR (
+        p_author_name IN AUTHOR.AUTHOR_NAME%TYPE
+    );
+
+    -- Procedure to calculate the total purchase amount within a date range
+    PROCEDURE TOTALPURCHASEAMOUNT (
+        p_start_date IN DATE,
+        p_end_date   IN DATE
+    );
+
+END DATADATA;
+/
+
+----------------------------------------------------
+-- 6. Package : Create Body 
+----------------------------------------------------
+    
+CREATE OR REPLACE PACKAGE BODY DATADATA AS
+
+    PROCEDURE MOSTEXPENSIVEBOOK AS
+        CURSOR v_data IS
+            SELECT BOOK_NAME, BOOK_PRICE, BOOK_QTY
+            FROM BOOK
+            WHERE BOOK_PRICE = (SELECT MAX(BOOK_PRICE) FROM BOOK); -- Use '=' for efficiency
+    BEGIN
+        FOR rec IN v_data LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                'NAME = ' || rec.BOOK_NAME ||
+                ', PRICE = ' || rec.BOOK_PRICE ||
+                ', QTY = ' || rec.BOOK_QTY
+            );
+        END LOOP;
+    END MOSTEXPENSIVEBOOK;
+
+    PROCEDURE TOTBOOKBYSUBJECT (
+        p_subject_name IN BOOKSUBJECT.BOOKSUBJECT_NAME%TYPE
+    ) AS
+        v_total NUMBER;
+    BEGIN
+        -- Using modern ANSI JOIN syntax for clarity
+        SELECT COUNT(*)
+        INTO v_total
+        FROM BOOK b
+        JOIN BOOKSUBJECT bs ON b.BOOKSUB_ID = bs.BOOKSUB_ID
+        WHERE bs.BOOKSUBJECT_NAME = p_subject_name;
+
+        DBMS_OUTPUT.PUT_LINE('Total books for subject "' || p_subject_name || '": ' || v_total);
+    END TOTBOOKBYSUBJECT;
+
+    PROCEDURE BOOKSBYAUTHOR (
+        p_author_name IN AUTHOR.AUTHOR_NAME%TYPE
+    ) AS
+        CURSOR v_data IS
+            -- Using modern ANSI JOIN syntax for clarity
+            SELECT b.BOOK_ID, b.BOOK_NAME, b.BOOK_PRICE, bs.BOOKSUBJECT_NAME
+            FROM BOOK b
+            JOIN AUTHOR a ON b.AUTHOR_ID = a.AUTHOR_ID
+            JOIN BOOKSUBJECT bs ON b.BOOKSUB_ID = bs.BOOKSUB_ID
+            WHERE a.AUTHOR_NAME = p_author_name;
+    BEGIN
+        FOR rec IN v_data LOOP
+            DBMS_OUTPUT.PUT_LINE(
+                'ID = ' || rec.BOOK_ID ||
+                ', NAME = ' || rec.BOOK_NAME ||
+                ', PRICE = ' || rec.BOOK_PRICE ||
+                ', SUBJECT = ' || rec.BOOKSUBJECT_NAME
+            );
+        END LOOP;
+    END BOOKSBYAUTHOR;
+
+    PROCEDURE TOTALPURCHASEAMOUNT (
+        p_start_date IN DATE,
+        p_end_date   IN DATE
+    ) AS
+        v_total_amount NUMBER;
+    BEGIN
+        SELECT SUM(BOOK_PRICE * BOOK_QTY)
+        INTO v_total_amount
+        FROM BOOK
+        WHERE PURCHASEDATE BETWEEN p_start_date AND p_end_date;
+
+        DBMS_OUTPUT.PUT_LINE('Total purchase amount is: ' || NVL(v_total_amount, 0));
+    END TOTALPURCHASEAMOUNT;
+
+END DATADATA;
+/
+
