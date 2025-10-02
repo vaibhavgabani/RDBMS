@@ -166,3 +166,25 @@ BEGIN
     BOOKSBYAUTHOR('JAMES SMITH');
 END;
 /
+
+----------------------------------------------------
+-- 4. PROCEDURE : Total Amount of Book Purchased in a Particular Duration
+----------------------------------------------------
+CREATE OR REPLACE PROCEDURE duration
+(SDATE DATE, EDATE DATE)
+AS
+    TDATA NUMBER;
+BEGIN
+    SELECT (BOOK_PRICE * BOOK_QTY) INTO TDATA
+    FROM BOOK
+    WHERE PURCHASEDATE BETWEEN SDATE AND EDATE;
+
+    DBMS_OUTPUT.PUT_LINE('TOTAL IS : '|| TDATA);
+END;
+
+BEGIN
+    duration(TO_DATE('06-AUG-25','DD-MON-YYY'),TO_DATE('06-AUG-25','DD-MON-YYY'));
+END;
+
+
+
